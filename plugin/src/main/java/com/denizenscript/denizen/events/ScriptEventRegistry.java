@@ -203,7 +203,6 @@ public class ScriptEventRegistry {
         if (!Denizen.supportsPaper) {
             ScriptEvent.registerScriptEvent(PlayerCompletesAdvancementScriptEvent.class);
         }
-        ScriptEvent.registerScriptEvent(PlayerConsumesScriptEvent.class);
         ScriptEvent.registerScriptEvent(PlayerCraftsItemScriptEvent.class);
         ScriptEvent.registerScriptEvent(PlayerDamagesBlockScriptEvent.class);
         ScriptEvent.registerScriptEvent(PlayerDragsInInvScriptEvent.class);

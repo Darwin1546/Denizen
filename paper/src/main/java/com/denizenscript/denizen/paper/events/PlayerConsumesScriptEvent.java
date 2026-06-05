@@ -1,17 +1,12 @@
-package com.denizenscript.denizen.events.player;
+package com.denizenscript.denizen.paper.events;
 
 import com.denizenscript.denizen.events.BukkitScriptEvent;
-import com.denizenscript.denizen.nms.NMSHandler;
-import com.denizenscript.denizen.nms.NMSVersion;
 import com.denizenscript.denizen.objects.EntityTag;
 import com.denizenscript.denizen.objects.ItemTag;
-import com.denizenscript.denizen.tags.BukkitTagContext;
 import com.denizenscript.denizen.utilities.implementation.BukkitScriptEntryData;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import com.denizenscript.denizencore.objects.core.ScriptTag;
 import com.denizenscript.denizencore.scripts.ScriptEntryData;
-import com.denizenscript.denizencore.utilities.debugging.Debug;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
@@ -20,10 +15,7 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
 
     // <--[event]
     // @Events
-    // player consumes item
     // player consumes <item>
-    //
-    // @Regex ^on player consumes [^\s]+$
     //
     // @Group Player
     //
@@ -36,31 +28,39 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
     // @Context
     // <context.item> returns the ItemTag.
     // <context.hand> returns an ElementTag of the hand being used to consume the item. Can be either HAND or OFF_HAND. Requires a 1.19+ server.
+    // <context.replacement> returns the ItemTag that will replace the consumed item.
     //
     // @Determine
-    // ItemTag to change the item being consumed. Use with caution, if the player is eating a stack of items, this will replace the entire stack.
+    // item:ItemTag to change the item being consumed. Use with caution, if the player is eating a stack of items, this will replace the entire stack.
+    // replacement:ItemTag to change the remaining item after original item being consumed.
     //
     // @Player Always.
     //
     // -->
 
     public PlayerConsumesScriptEvent() {
-    }
+        registerCouldMatcher("player consumes <item>");
 
+        this.<PlayerConsumesScriptEvent, ItemTag>registerOptionalDetermination("item", ItemTag.class, (evt, context, value) -> {
+            if (value != null) {
+                evt.event.setItem(value.getItemStack());
+                return true;
+            }
+            return false;
+        });
+        this.<PlayerConsumesScriptEvent, ItemTag>registerOptionalDetermination("replacement", ItemTag.class, (evt, context, value) -> {
+            if (value != null) {
+                evt.event.setReplacement(value.getItemStack());
+                return true;
+            }
+            return false;
+        });
+
+    }
 
     public ItemTag item;
+    public ItemTag replacement;
     public PlayerItemConsumeEvent event;
-
-    @Override
-    public boolean couldMatch(ScriptPath path) {
-        if (!path.eventLower.startsWith("player consumes")) {
-            return false;
-        }
-        if (!couldMatchItem(path.eventArgLowerAt(2))) {
-            return false;
-        }
-        return true;
-    }
 
     @Override
     public boolean matches(ScriptPath path) {
@@ -74,34 +74,16 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
     }
 
     @Override
-    public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
-        String determination = determinationObj.toString();
-        if (ItemTag.matches(determination)) {
-            BukkitTagContext context = new BukkitTagContext(EntityTag.getPlayerFrom(event.getPlayer()), null, new ScriptTag(path.container));
-            ItemTag newitem = ItemTag.valueOf(determination, context);
-            if (newitem != null) {
-                event.setItem(newitem.getItemStack());
-                return true;
-            }
-            else {
-                Debug.echoError("Invalid event 'item' check [" + getName() + "] ('determine item ????'): '" + determination + "' for " + path.container.getName());
-            }
-
-        }
-        return super.applyDetermination(path, determinationObj);
-    }
-
-    @Override
     public ScriptEntryData getScriptEntryData() {
-        // TODO: Store the player / npc?
-        return new BukkitScriptEntryData(event != null ? EntityTag.getPlayerFrom(event.getPlayer()) : null, null);
+        return new BukkitScriptEntryData(event.getPlayer());
     }
 
     @Override
     public ObjectTag getContext(String name) {
         return switch (name) {
             case "item" -> item;
-            case "hand" -> NMSHandler.getVersion().isAtLeast(NMSVersion.v1_19) ? new ElementTag(event.getHand()) : null;
+            case "hand" -> new ElementTag(event.getHand());
+            case "replacement" -> replacement;
             default -> super.getContext(name);
         };
     }
@@ -112,6 +94,7 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
             return;
         }
         item = new ItemTag(event.getItem());
+        replacement = new ItemTag(event.getReplacement());
         this.event = event;
         fire(event);
     }
