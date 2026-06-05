@@ -37,6 +37,7 @@ import org.bukkit.event.block.BlockCookEvent;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.recipe.CraftingBookCategory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -156,7 +157,7 @@ public class ItemScriptHelper implements Listener {
         return outputItems.toArray(new ItemStack[0]);
     }
 
-    public static void registerShapedRecipe(ItemScriptContainer container, ItemStack item, List<String> recipeList, String internalId, String group) {
+    public static void registerShapedRecipe(ItemScriptContainer container, ItemStack item, List<String> recipeList, String internalId, String group, String category) {
         for (int n = 0; n < recipeList.size(); n++) {
             recipeList.set(n, TagManager.tag(ScriptBuilder.stripLinePrefix(recipeList.get(n)), new BukkitTagContext(container)));
         }
@@ -188,6 +189,7 @@ public class ItemScriptHelper implements Listener {
         NamespacedKey key = new NamespacedKey("denizen", internalId);
         ShapedRecipe recipe = new ShapedRecipe(key, item);
         recipe.setGroup(group);
+        recipe.setCategory(category == null ? CraftingBookCategory.MISC : CraftingBookCategory.valueOf(category.toUpperCase()));
         String shape1 = "ABC".substring(0, width);
         String shape2 = "DEF".substring(0, width);
         String shape3 = "GHI".substring(0, width);
@@ -321,7 +323,7 @@ public class ItemScriptHelper implements Listener {
                             item.setAmount(Integer.parseInt(getString.apply("output_quantity")));
                         }
                         switch (type) {
-                            case "shaped" -> registerShapedRecipe(container, item, subSection.getStringList("input"), internalId, group); // tagged in register code
+                            case "shaped" -> registerShapedRecipe(container, item, subSection.getStringList("input"), internalId, group, subSection.getString("category")); // tagged in register code
                             case "shapeless" -> registerShapelessRecipe(container, item, getString.apply("input"), internalId, group, subSection.getString("category"));
                             case "stonecutting" -> registerStonecuttingRecipe(container, item, getString.apply("input"), internalId, group);
                             case "furnace", "blast", "smoker", "campfire" -> {
@@ -353,7 +355,7 @@ public class ItemScriptHelper implements Listener {
                 // Old script style
                 if (container.contains("RECIPE", List.class)) {
                     BukkitImplDeprecations.oldRecipeScript.warn(container);
-                    registerShapedRecipe(container, container.getCleanReference().getItemStack().clone(), container.getStringList("RECIPE"), getIdFor(container, "old_recipe", 0), "custom");
+                    registerShapedRecipe(container, container.getCleanReference().getItemStack().clone(), container.getStringList("RECIPE"), getIdFor(container, "old_recipe", 0), "custom", null);
                 }
                 if (container.contains("SHAPELESS_RECIPE", String.class)) {
                     BukkitImplDeprecations.oldRecipeScript.warn(container);
