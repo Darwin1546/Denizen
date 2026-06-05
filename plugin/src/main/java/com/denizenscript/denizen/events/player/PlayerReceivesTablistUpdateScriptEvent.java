@@ -143,7 +143,7 @@ public class PlayerReceivesTablistUpdateScriptEvent extends BukkitScriptEvent {
                     return true;
                 }
                 data.modified = true;
-                data.name = determination.substring("display:".length());
+                data.display = determination.substring("display:".length());
                 return true;
             }
             else if (determinationLow.startsWith("gamemode:")) {
