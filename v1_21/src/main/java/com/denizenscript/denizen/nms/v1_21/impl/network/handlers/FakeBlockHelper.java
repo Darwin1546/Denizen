@@ -7,6 +7,7 @@ import com.denizenscript.denizen.utilities.blocks.FakeBlock;
 import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import io.netty.buffer.Unpooled;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -18,6 +19,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -26,7 +28,6 @@ import net.minecraft.world.level.chunk.Strategy;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_21_R7.CraftRegistry;
 import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R7.block.CraftBlockStates;
 import org.bukkit.craftbukkit.v1_21_R7.block.data.CraftBlockData;
 
 import java.lang.invoke.MethodHandle;
@@ -100,7 +101,7 @@ public class FakeBlockHelper {
             FriendlyByteBuf outputSerial = new FriendlyByteBuf(Unpooled.buffer(serial.readableBytes()));
             List blockEntities = new ArrayList((List) CHUNKDATA_BLOCK_ENTITIES.get(originalPacket.getChunkData()));
             CHUNKDATA_BLOCK_ENTITIES.set(packet, blockEntities);
-            for (int i = 0; i < blockEntities.size(); i++) {
+            for (int i = blockEntities.size() - 1; i >= 0; i--) {
                 Object blockEnt = blockEntities.get(i);
                 int xz = CHUNKDATA_BLOCKENTITYINFO_PACKEDXZ.getInt(blockEnt);
                 int y = CHUNKDATA_BLOCKENTITYINFO_Y.getInt(blockEnt);
@@ -109,9 +110,15 @@ public class FakeBlockHelper {
                 for (FakeBlock block : blocks) {
                     LocationTag loc = block.location;
                     if (loc.getBlockX() == x && loc.getBlockY() == y && loc.getBlockZ() == z && block.material != null) {
-                        BlockEntity newBlockEnt = CraftBlockStates.createNewTileEntity(block.material.getMaterial());
-                        Object newData = CHUNKDATA_BLOCK_ENTITY_CONSTRUCTOR.invoke(xz, y, newBlockEnt.getType(), newBlockEnt.getUpdateTag(CraftRegistry.getMinecraftRegistry()));
-                        blockEntities.set(i, newData);
+                        BlockState newState = getNMSState(block);
+                        BlockEntity newBlockEnt = newState.getBlock() instanceof EntityBlock entityBlock ? entityBlock.newBlockEntity(new BlockPos(x, y, z), newState) : null;
+                        if (newBlockEnt == null) {
+                            blockEntities.remove(i);
+                        }
+                        else {
+                            Object newData = CHUNKDATA_BLOCK_ENTITY_CONSTRUCTOR.invoke(xz, y, newBlockEnt.getType(), newBlockEnt.getUpdateTag(CraftRegistry.getMinecraftRegistry()));
+                            blockEntities.set(i, newData);
+                        }
                         break;
                     }
                 }
