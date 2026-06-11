@@ -210,9 +210,11 @@ public abstract class DataComponentAdapter<D extends ObjectTag, C extends DataCo
         public void setPropertyValue(D value, Mechanism mechanism) {
             if (value == null) {
                 getItemStack().resetData(componentType);
-                return;
             }
-            setValue(getItemStack(), value, mechanism);
+            else {
+                setValue(getItemStack(), value, mechanism);
+            }
+            object.resetCache();
         }
 
         @Override

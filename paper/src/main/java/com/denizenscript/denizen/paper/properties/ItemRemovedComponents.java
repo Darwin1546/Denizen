@@ -55,6 +55,7 @@ public class ItemRemovedComponents extends ItemProperty<ListTag> {
             }
             getItemStack().unsetData(componentType);
         }
+        object.resetCache();
     }
 
     @Override
@@ -81,6 +82,7 @@ public class ItemRemovedComponents extends ItemProperty<ListTag> {
                 return;
             }
             prop.getItemStack().unsetData(componentType);
+            prop.object.resetCache();
         });
     }
 }
