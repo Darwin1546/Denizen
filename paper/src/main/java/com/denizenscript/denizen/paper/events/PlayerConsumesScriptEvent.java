@@ -43,6 +43,7 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
 
         this.<PlayerConsumesScriptEvent, ItemTag>registerOptionalDetermination("item", ItemTag.class, (evt, context, value) -> {
             if (value != null) {
+                evt.item = value;
                 evt.event.setItem(value.getItemStack());
                 return true;
             }
@@ -50,6 +51,7 @@ public class PlayerConsumesScriptEvent extends BukkitScriptEvent implements List
         });
         this.<PlayerConsumesScriptEvent, ItemTag>registerOptionalDetermination("replacement", ItemTag.class, (evt, context, value) -> {
             if (value != null) {
+                evt.replacement = value;
                 evt.event.setReplacement(value.getItemStack());
                 return true;
             }
